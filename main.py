@@ -12,8 +12,8 @@ import sys
 from pathlib import Path
 
 # Configuration
-PORT = 4000
-HOST = 'localhost'
+PORT = int(os.environ.get('PORT', 8000))  # Use environment PORT for deployment
+HOST = os.environ.get('HOST', '0.0.0.0')  # Use 0.0.0.0 for deployment compatibility
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Custom HTTP request handler with better error handling and logging"""
@@ -45,10 +45,15 @@ def find_free_port(start_port=8000, max_attempts=10):
     """Find a free port starting from start_port"""
     import socket
     
+    # If PORT is set by environment (deployment), use it directly
+    if 'PORT' in os.environ:
+        return int(os.environ['PORT'])
+    
+    # Otherwise, find a free port for local development
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind((HOST, port))
+                s.bind(('0.0.0.0', port))  # Bind to 0.0.0.0 instead of HOST
                 return port
         except OSError:
             continue
@@ -93,24 +98,37 @@ def start_server():
             print(f"❌ Error: {e}")
             return
         
-        # Create server
+        # Create server with deployment-friendly settings
         with socketserver.TCPServer((HOST, port), CustomHTTPRequestHandler) as httpd:
+            # Allow address reuse for deployment
+            httpd.allow_reuse_address = True
+            
             server_url = f"http://{HOST}:{port}"
+            local_url = f"http://localhost:{port}"
             
             print("=" * 60)
             print("🚀 Your-Work Innovations Website Server")
             print("=" * 60)
             print(f"📍 Server running at: {server_url}")
-            print(f"📁 Serving files from: {Path.cwd()}")
+            if HOST == '0.0.0.0':
+                print(f"� Local access: {local_url}")
+            print(f"�📁 Serving files from: {Path.cwd()}")
             print("=" * 60)
             print("📱 Test your responsive website on different devices:")
-            print(f"   • Desktop: {server_url}")
-            print(f"   • Mobile: Use your computer's IP address instead of 'localhost'")
+            if HOST == '0.0.0.0':
+                print(f"   • Desktop: {local_url}")
+                print(f"   • Mobile: Use your computer's IP address with port {port}")
+                print(f"   • Deployment: Server accessible on all interfaces")
+            else:
+                print(f"   • Desktop: {server_url}")
+                print(f"   • Mobile: Use your computer's IP address instead of 'localhost'")
             print("=" * 60)
             print("💡 Tips:")
             print("   • Press Ctrl+C to stop the server")
             print("   • Refresh the page after making changes to HTML/CSS")
             print("   • Use browser dev tools to test different screen sizes")
+            if HOST == '0.0.0.0':
+                print("   • This server is configured for deployment compatibility")
             print("=" * 60)
             
             # Open browser automatically
@@ -163,4 +181,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
