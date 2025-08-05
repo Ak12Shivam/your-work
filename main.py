@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 # Configuration
-PORT = 8000
+PORT = 4000
 HOST = 'localhost'
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -163,3 +163,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
